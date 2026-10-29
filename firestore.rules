@@ -1,0 +1,31 @@
+rules_version = '2';
+
+// Lecture publique, écriture réservée à mon compte Google.
+// UID du propriétaire (console Firebase > Authentication > Utilisateurs).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner() {
+      return request.auth != null && request.auth.uid == "mbZgszUT9wV0RX0SXdXLskjQrvA3";
+    }
+
+    function validFilm(d) {
+      return d.title is string && d.title.size() > 0 && d.title.size() <= 300
+        && d.status in ['seen', 'watchlist']
+        && (d.rating == null || (d.rating is number && d.rating >= 0 && d.rating <= 10))
+        && (d.mood == null || d.mood in ['prenant', 'leger', 'humain', 'divertissement'])
+        && (d.version == null || d.version in ['VO', 'VOSTFR', 'VF']);
+    }
+
+    match /films/{filmId} {
+      allow read: if true;
+      allow create, update: if isOwner() && validFilm(request.resource.data);
+      allow delete: if isOwner();
+    }
+
+    // Tout le reste est fermé
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

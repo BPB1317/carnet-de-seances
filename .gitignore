@@ -1,0 +1,7 @@
+# Données personnelles brutes et fichiers de travail
+data/
+docs/dev-films.json
+maquettes/
+tools/node_modules/
+secrets/
+*.xlsx
