@@ -2,7 +2,7 @@
 // Rien ici n'est une protection : c'est l'interface. Les écritures sont autorisées ou refusées
 // par les règles Firestore (firestore.rules), qui vérifient l'UID du compte connecté.
 import { firebaseApp, firestore, FIREBASE_SDK, getFilms, seenFilms } from './store.js';
-import { MOODS, VERSIONS, esc, tmdbImg, todayISO, initials } from './ui.js';
+import { MOODS, VERSIONS, esc, fmtScore, tierOf, tmdbImg, todayISO, initials } from './ui.js';
 
 const KEY_STORE = 'carnet:tmdbKey';
 const DEFAULT_VENUE = { name: 'Pathé', city: 'Mâcon', label: 'Pathé Mâcon', kind: 'cinema' };
@@ -283,7 +283,7 @@ async function openForm(existing = null) {
     });
     rate.setAttribute('aria-valuenow', r == null ? 0 : r / 2);
     rate.setAttribute('aria-valuetext', r == null ? 'à noter' : `${String(r / 2).replace('.', ',')} sur 5`);
-    $('.rate-val').textContent = r == null ? 'à noter' : `${String(r / 2).replace('.', ',')} / 5`;
+    $('.rate-val').textContent = r == null ? 'à noter' : `${fmtScore(r)} / 10 · ${tierOf(r).label}`;
   };
   rate.addEventListener('click', e => {
     const star = e.target.closest('.s'); if (!star) return;

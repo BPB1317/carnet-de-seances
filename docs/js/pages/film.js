@@ -1,6 +1,6 @@
 // Fiche film : image de fond, affiche, note, avis en grande citation, ticket, casting (favoris en avant).
 import { sessionNumber } from '../store.js';
-import { stars, poster, moodTag, ticket, esc, fmtDate, fmtStars, fmtNum, countryName, tmdbImg, backdropUrl, initials, inkOf } from '../ui.js';
+import { stars, bigScore, poster, moodTag, ticket, esc, fmtDate, fmtNum, countryName, tmdbImg, backdropUrl, initials, inkOf } from '../ui.js';
 
 const find = (list, id) => list.find(f => f.id === id);
 export const overHero = (route, list) => Boolean(find(list, route.arg));
@@ -50,7 +50,7 @@ export function render(app, route, list) {
           <h1>${esc(f.title)}</h1>
           ${f.originalTitle ? `<p class="orig">${esc(f.originalTitle)}</p>` : ''}
           <div class="meta">${[f.year, f.director, f.runtime && `${f.runtime} min`, f.genre].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('')}</div>
-          <div class="rating">${stars(f)}${seen && f.rating != null ? `<span class="n">${fmtStars(f.rating)} / 5</span>` : ''}</div>
+          ${seen && f.rating != null ? bigScore(f) : `<div class="rating">${stars(f)}</div>`}
           <div class="admin-actions" data-admin>
             <button type="button" class="btn" data-edit="${esc(f.id)}">Modifier</button>
             <button type="button" class="btn danger" data-delete="${esc(f.id)}">Supprimer</button>

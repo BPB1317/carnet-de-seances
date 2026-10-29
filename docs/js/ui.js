@@ -19,6 +19,32 @@ export const backdropUrl = (p, wide = innerWidth > 900) => tmdbImg(wide ? 'w1280
 
 const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.6l2.76 6.1 6.64.62-5 4.43 1.46 6.53L12 16.9l-5.86 3.38L7.6 13.75l-5-4.43 6.64-.62z"/></svg>';
 export const fmtStars = r => String(r / 2).replace('.', ',');
+
+// Verdicts (note /10) : une couleur par palier, à la SeriesGraph (variables --t* dans style.css)
+export const TIERS = [
+  { k: 7, min: 9, label: 'Chef-d’œuvre', range: '9 et +' },
+  { k: 6, min: 8, label: 'Excellent', range: '8 – 9' },
+  { k: 5, min: 7, label: 'Très bon', range: '7 – 8' },
+  { k: 4, min: 6, label: 'Bon', range: '6 – 7' },
+  { k: 3, min: 5, label: 'Correct', range: '5 – 6' },
+  { k: 2, min: 4, label: 'Décevant', range: '4 – 5' },
+  { k: 1, min: 0, label: 'Raté', range: 'moins de 4' },
+];
+export const tierOf = r => (r == null ? null : TIERS.find(t => r >= t.min));
+export const fmtScore = r => r.toFixed(1).replace('.', ',');
+// Pastille : note chiffrée + verdict (ou « à noter » / « à voir »)
+export function score(f, { verdict = true } = {}) {
+  if (f.status === 'watchlist') return '<span class="tbd wl-tag">à voir</span>';
+  if (f.rating == null) return '<span class="tbd">à noter</span>';
+  const t = tierOf(f.rating);
+  return `<span class="score k${t.k}"><span class="s" aria-label="${fmtScore(f.rating)} sur 10">${fmtScore(f.rating)}</span>${verdict ? `<span class="w">${t.label}</span>` : ''}</span>`;
+}
+// Grande note (film à la une, fiche film)
+export function bigScore(f, note = '') {
+  if (f.status !== 'seen' || f.rating == null) return '';
+  const t = tierOf(f.rating);
+  return `<div class="big-score k${t.k}"><span class="n">${fmtScore(f.rating)}<small>/10</small></span><span class="v">${t.label}${note ? `<span>${note}</span>` : ''}</span></div>`;
+}
 export function stars(f) {
   if (f.status === 'watchlist') return '<span class="tbd wl-tag">à voir</span>';
   if (f.rating == null) return '<span class="tbd">à noter</span>';
@@ -40,8 +66,9 @@ export const moodTag = f => {
 export function card(f, { compact = true, sizes } = {}) {
   return `<a class="card${compact ? ' compact' : ''}" href="#/film/${encodeURIComponent(f.id)}" style="--ink:${inkOf(f)}" aria-label="${esc(f.title)}${f.year ? ` (${f.year})` : ''}">
     ${poster(f, { sizes })}
-    <div class="over" aria-hidden="true">${stars(f)}${moodTag(f)}</div>
-    <div class="info"><span class="ttl">${esc(f.title)}</span>${stars(f)}</div>
+    ${f.mood ? `<div class="over" aria-hidden="true">${moodTag(f)}</div>` : ''}
+    <div class="info">${score(f)}</div>
+    <div class="ttl">${esc(f.title)}</div>
   </a>`;
 }
 

@@ -9,6 +9,14 @@
   --m-leger:#7FA03A;          /* olive */
   --m-humain:#B868A8;         /* prune */
   --m-divertissement:#CC5235; /* velours rouge */
+  /* verdicts (note /10), du chef-d'œuvre au raté ; --t*f = encre lisible dessus */
+  --t7:#5B9BD5; --t7f:#0F0D0B;
+  --t6:#2F7D52; --t6f:#F3ECE0;
+  --t5:#74A84A; --t5f:#0F0D0B;
+  --t4:#D8B13C; --t4f:#0F0D0B;
+  --t3:#D57A33; --t3f:#0F0D0B;
+  --t2:#B4473B; --t2f:#F3ECE0;
+  --t1:#7A5A9E; --t1f:#F3ECE0;
   --serif:"Fraunces", Georgia, serif;
   --sans:"Work Sans", system-ui, sans-serif;
   --mono:"IBM Plex Mono", ui-monospace, monospace;
@@ -57,6 +65,21 @@ body.over-hero .site-head{position:absolute;left:0;right:0}
 .stars{position:relative;display:inline-block;line-height:0;vertical-align:middle;color:#4A433B;white-space:nowrap}
 .stars .on{position:absolute;inset:0 auto 0 0;width:var(--p);overflow:hidden;color:var(--amber)}
 .stars svg{width:1em;height:1em}
+/* pastille de note + verdict */
+.k7{--tb:var(--t7);--tf:var(--t7f)} .k6{--tb:var(--t6);--tf:var(--t6f)} .k5{--tb:var(--t5);--tf:var(--t5f)} .k4{--tb:var(--t4);--tf:var(--t4f)}
+.k3{--tb:var(--t3);--tf:var(--t3f)} .k2{--tb:var(--t2);--tf:var(--t2f)} .k1{--tb:var(--t1);--tf:var(--t1f)}
+.score{display:inline-flex;align-items:center;gap:8px;min-width:0;vertical-align:middle}
+.score .s{background:var(--tb);color:var(--tf);font:600 15px/1 var(--sans);font-variant-numeric:tabular-nums;padding:5px 7px;border-radius:3px;flex:none}
+.score .w{font:11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.big-score{display:flex;align-items:center;gap:16px;margin-top:20px}
+.big-score .n{background:var(--tb);color:var(--tf);font:400 60px/1 var(--serif);letter-spacing:-.03em;padding:6px 16px 10px;border-radius:3px;font-variant-numeric:tabular-nums}
+.big-score .n small{font-size:20px;opacity:.7;margin-left:2px}
+.big-score .v{font:500 13px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.big-score .v span{display:block;color:var(--muted);font:400 13px var(--sans);letter-spacing:0;text-transform:none;margin-top:4px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:50%;background:var(--tb)}
+@media (max-width:640px){ .big-score .n{font-size:44px;padding:4px 12px 8px} .card .score{gap:6px} .card .score .w{font-size:10px;letter-spacing:0} }
 .tbd{display:inline-block;font:500 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--amber);border:1px solid currentColor;padding:3px 5px;border-radius:2px;white-space:nowrap}
 .wl-tag{color:var(--muted)}
 
@@ -72,17 +95,14 @@ body.over-hero .site-head{position:absolute;left:0;right:0}
 .poster .ph .y{font:11px var(--mono);color:var(--muted)}
 
 .card{display:block;position:relative;min-width:0;transition:transform .25s ease;-webkit-tap-highlight-color:transparent}
-.card .info{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-top:8px;min-height:30px}
-.card .ttl{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.card .info .stars{font-size:11px;flex:none}
+.card .info{display:flex;align-items:center;padding-top:9px;min-height:35px;min-width:0}
+.card .ttl{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;margin-top:3px}
 .card .over{display:none}
 @media (hover:hover){
   .card:hover{transform:translateY(-5px)}
-  .card .over{position:absolute;left:0;right:0;bottom:0;padding:34px 10px 12px;background:linear-gradient(0deg,rgba(15,13,11,.94),rgba(15,13,11,0));
+  .card .over{position:absolute;left:0;right:0;top:0;aspect-ratio:2/3;justify-content:flex-end;padding:34px 10px 12px;background:linear-gradient(0deg,rgba(15,13,11,.94),rgba(15,13,11,0));
     display:flex;flex-direction:column;align-items:flex-start;gap:7px;opacity:0;transition:opacity .2s;z-index:3}
-  .card .over .stars{font-size:15px}
   .card:hover .over,.card:focus-visible .over{opacity:1}
-  .card.compact .info{display:none}
 }
 @media (prefers-reduced-motion:reduce){ .card,.card .over{transition:none} .card:hover{transform:none} }
 

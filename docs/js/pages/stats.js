@@ -1,6 +1,6 @@
 // Stats façon SeriesGraph : chiffres clés, calendrier, notes, humeurs, lieux, versions, acteurs, récap annuel.
 import { seenFilms } from '../store.js';
-import { MOODS, VERSIONS, esc, fmtStars, fmtHours, fmtDate, monthName, tmdbImg, backdropUrl, initials, poster, bindTooltip } from '../ui.js';
+import { MOODS, VERSIONS, TIERS, tierOf, fmtScore, esc, fmtHours, fmtDate, monthName, tmdbImg, backdropUrl, initials, poster, bindTooltip } from '../ui.js';
 
 // Rampe séquentielle ambre (0, 1, 2, 3+ séances dans la journée)
 const HEAT = ['#221E1A', '#6B4A1F', '#A8742D', '#E8A33D'];
@@ -59,26 +59,28 @@ function heatmap(films, year) {
 
 // ---------- répartition des notes ----------
 function ratingBars(films) {
-  const bins = Array.from({ length: 10 }, (_, i) => films.filter(f => f.rating === (i + 1)).length);
+  // Une barre par demi-point, de 1 à 10, colorée selon le verdict
+  const steps = Array.from({ length: 19 }, (_, i) => 1 + i / 2);
+  const bins = steps.map(v => films.filter(f => f.rating === v).length);
   const max = Math.max(1, ...bins);
-  const W = 600, H = 190, pad = 22, bw = (W - 20) / 10, inner = bw - 14;
-  const lab = i => { const v = (i + 1) / 2; return Number.isInteger(v) ? String(v) : (Math.floor(v) || '') + '½'; };
+  const W = 600, H = 190, pad = 22, bw = (W - 20) / steps.length, inner = bw - 6;
   const peak = bins.indexOf(max);
   const bars = bins.map((n, i) => {
-    const h = n ? Math.max(4, (n / max) * (H - pad - 20)) : 0;
-    const x = 10 + i * bw + 7, y = H - pad - h;
+    const v = steps[i], h = n ? Math.max(4, (n / max) * (H - pad - 20)) : 0;
+    const x = 10 + i * bw + 3, y = H - pad - h;
     return `<g class="bin" data-i="${i}" data-n="${n}" tabindex="0">
       <rect x="${10 + i * bw}" y="0" width="${bw}" height="${H}" fill="transparent"/>
-      ${n ? `<path d="M${x},${H - pad} V${y + 4} q0,-4 4,-4 h${inner - 8} q4,0 4,4 V${H - pad} Z" fill="var(--amber)"/>` : ''}
+      ${n ? `<path d="M${x},${H - pad} V${y + 4} q0,-4 4,-4 h${inner - 8} q4,0 4,4 V${H - pad} Z" fill="var(--t${tierOf(v).k})"/>` : ''}
       ${i === peak && n ? `<text x="${x + inner / 2}" y="${y - 6}" text-anchor="middle" style="fill:var(--text)">${n}</text>` : ''}
-      <text x="${x + inner / 2}" y="${H - 6}" text-anchor="middle">${lab(i)}</text>
+      ${Number.isInteger(v) ? `<text x="${x + inner / 2}" y="${H - 6}" text-anchor="middle">${v}</text>` : ''}
     </g>`;
   }).join('');
   const tbd = films.filter(f => f.rating == null).length;
   return `<div class="chart" id="ratings"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Répartition des notes">
       <line class="axis" x1="0" x2="${W}" y1="${H - pad}" y2="${H - pad}"/>${bars}</svg></div>
-    <p class="sub" style="margin-top:8px">Étoiles sur 5${tbd ? ` · ${plural(tbd, 'film')} à noter` : ''}</p>
-    ${tableToggle('t-ratings', ['Note', 'Films'], bins.map((n, i) => [lab(i) + ' ★', n]))}`;
+    <div class="legend">${TIERS.map(t => `<span class="k${t.k}"><i></i>${t.label}</span>`).join('')}</div>
+    <p class="sub" style="margin-top:8px">Note sur 10${tbd ? ` · ${plural(tbd, 'film')} à noter` : ''}</p>
+    ${tableToggle('t-ratings', ['Note', 'Films'], bins.map((n, i) => [fmtScore(steps[i]), n]))}`;
 }
 
 const hbars = (rows, max) => `<div class="hbar">${rows.map(r => `
@@ -124,11 +126,11 @@ function wrapped(films, year) {
       <div class="mood-tag">Mon année ${year}</div>
       <p class="big"><em>${yf.length}</em> ${yf.length > 1 ? 'séances' : 'séance'}, <em>${fmtHours(mins).replace(/ \d+$/, '')}</em> dans le noir.</p>
       <div class="w-grid">
-        ${best ? `<a class="w-item w-top" href="#/film/${encodeURIComponent(best.id)}">${poster(best, { sizes: '96px' })}<div><div class="l">Film de l'année</div><div class="v">${esc(best.title)}</div><div class="s">${fmtStars(best.rating)} / 5</div></div></a>` : ''}
+        ${best ? `<a class="w-item w-top" href="#/film/${encodeURIComponent(best.id)}">${poster(best, { sizes: '96px' })}<div><div class="l">Film de l'année</div><div class="v">${esc(best.title)}</div><div class="s">${fmtScore(best.rating)} / 10 · ${tierOf(best.rating).label}</div></div></a>` : ''}
         ${moodObj ? `<div class="w-item"><div class="l">Humeur dominante</div><div class="v"><span class="dot" style="--ink:${moodObj.color}"></span>${moodObj.label}</div><div class="s">${plural(mood[1], 'film')}</div></div>` : ''}
         ${venue ? `<div class="w-item"><div class="l">Ma salle</div><div class="v">${esc(venue[0])}</div><div class="s">${plural(venue[1], 'séance')}</div></div>` : ''}
         ${month ? `<div class="w-item"><div class="l">Mois le plus chargé</div><div class="v">${monthName(month[0])}</div><div class="s">${plural(month[1], 'film')}</div></div>` : ''}
-        ${rated.length ? `<div class="w-item"><div class="l">Note moyenne</div><div class="v">${fmtStars(Math.round(avg(rated.map(f => f.rating)) * 10) / 10).replace(/(,\d)\d+/, '$1')} / 5</div><div class="s">sur ${plural(rated.length, 'film')} noté${rated.length > 1 ? 's' : ''}</div></div>` : ''}
+        ${rated.length ? `<div class="w-item"><div class="l">Note moyenne</div><div class="v">${fmtScore(avg(rated.map(f => f.rating)))} / 10</div><div class="s">sur ${plural(rated.length, 'film')} noté${rated.length > 1 ? 's' : ''}</div></div>` : ''}
         ${actor && actor.films.length > 1 ? `<div class="w-item"><div class="l">Acteur le plus vu</div><div class="v">${esc(actor.name)}</div><div class="s">${plural(actor.films.length, 'film')}</div></div>` : ''}
         ${withV ? `<div class="w-item"><div class="l">En version originale</div><div class="v">${Math.round((vo / withV) * 100)} %</div><div class="s">${vo} sur ${withV}</div></div>` : ''}
         <div class="w-item"><div class="l">Première et dernière</div><div class="v" style="font-size:18px">${esc(chrono[0].title)}</div><div class="s">${esc(fmtDate(chrono[0].watchedAt))} → ${esc(chrono.at(-1).title)}, ${esc(fmtDate(chrono.at(-1).watchedAt))}</div></div>
@@ -149,7 +151,7 @@ export function render(app, route, list) {
   const cinemas = [...count(films.filter(f => f.venue), f => f.venue.label)].sort((a, b) => b[1] - a[1]);
   const topCinema = cinemas.find(([label]) => films.find(f => f.venue?.label === label)?.venue.kind === 'cinema');
   const moodRows = MOODS.map(m => {
-    const r = rated.filter(f => f.mood === m.id).map(f => f.rating / 2);
+    const r = rated.filter(f => f.mood === m.id).map(f => f.rating);
     return { m, avg: avg(r), n: films.filter(f => f.mood === m.id).length };
   }).filter(x => x.n);
   const versions = VERSIONS.map(v => [v, films.filter(f => f.version === v).length]).filter(([, n]) => n);
@@ -164,7 +166,7 @@ export function render(app, route, list) {
     <div class="tiles">
       <div class="tile"><div class="v">${films.length}</div><div class="l">films vus</div></div>
       <div class="tile"><div class="v">${Math.round(mins / 60)}<small>h</small></div><div class="l">devant l'écran${knownRuntime < films.length ? '*' : ''}</div></div>
-      <div class="tile"><div class="v">${rated.length ? fmtStars(Math.round(avg(rated.map(f => f.rating)) * 10) / 10).replace(/(,\d)\d+/, '$1') : '—'}<small>/ 5</small></div><div class="l">note moyenne</div></div>
+      <div class="tile"><div class="v">${rated.length ? fmtScore(avg(rated.map(f => f.rating))) : '—'}<small>/ 10</small></div><div class="l">note moyenne</div></div>
       <div class="tile"><div class="v" style="font-size:clamp(22px,2.6vw,30px);line-height:1.1">${topCinema ? esc(topCinema[0]) : '—'}</div><div class="l">salle la plus fréquentée${topCinema ? ` · ${topCinema[1]}` : ''}</div></div>
     </div>
     ${knownRuntime < films.length ? `<p class="sub" style="margin-top:8px">* durée connue pour ${knownRuntime} films sur ${films.length}</p>` : ''}
@@ -189,9 +191,9 @@ export function render(app, route, list) {
       </section>
       <section>
         <h2>Note moyenne par humeur</h2>
-        <p class="sub">Sur 5 étoiles</p>
+        <p class="sub">Sur 10</p>
         ${hbars(moodRows.map(x => ({ label: `<span class="dot" style="--ink:${x.m.color}"></span>${x.m.label}`, ink: x.m.color, value: x.avg || 0,
-          text: `${x.avg != null ? x.avg.toFixed(1).replace('.', ',') : '—'} · ${plural(x.n, 'film')}` })), 5)}
+          text: `${x.avg != null ? fmtScore(x.avg) : '—'} · ${plural(x.n, 'film')}` })), 10)}
       </section>
     </div>
 
@@ -245,8 +247,8 @@ export function render(app, route, list) {
     return `<b>${esc(fmtDate(el.dataset.d))}</b><br>${l.length ? l.map(f => esc(f.title)).join('<br>') : 'Aucune séance'}`;
   });
   bindTooltip(root.querySelector('#ratings'), '.bin', el => {
-    const v = (+el.dataset.i + 1) / 2;
-    return `<b>${String(v).replace('.', ',')} ★</b> · ${plural(+el.dataset.n, 'film')}`;
+    const v = 1 + el.dataset.i / 2;
+    return `<b>${fmtScore(v)} / 10</b> · ${tierOf(v).label}<br>${plural(+el.dataset.n, 'film')}`;
   });
   bindTooltip(root.querySelector('.split'), 'span', el => `<b>${el.dataset.v}</b> · ${plural(+el.dataset.n, 'film')}`);
 }
