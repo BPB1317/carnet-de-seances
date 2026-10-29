@@ -89,13 +89,13 @@ function toast(msg, error = false) {
   setTimeout(() => t.remove(), error ? 7000 : 3200);
 }
 
-function sheet(html, { onClose } = {}) {
+function sheet(html, { onClose, backdropClose = true } = {}) {
   const d = document.createElement('dialog');
   d.className = 'sheet';
   d.innerHTML = html;
   document.body.appendChild(d);
   d.addEventListener('close', () => { d.remove(); onClose?.(); });
-  d.addEventListener('click', e => { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
+  d.addEventListener('click', e => { if ((backdropClose && e.target === d) || e.target.closest('[data-close]')) d.close(); });
   d.showModal();
   return d;
 }
@@ -180,7 +180,6 @@ async function openSettings() {
 const clean = o => JSON.parse(JSON.stringify(o, (k, v) => (v === undefined ? null : v)));
 
 // ---------- formulaire d'ajout / modification ----------
-const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.6l2.76 6.1 6.64.62-5 4.43 1.46 6.53L12 16.9l-5.86 3.38L7.6 13.75l-5-4.43 6.64-.62z"/></svg>';
 
 async function openForm(existing = null) {
   const list = await getFilms();
@@ -219,8 +218,9 @@ async function openForm(existing = null) {
       <div class="picked"></div>
       <section class="block seen-only">
         <h3>Ma note</h3>
+        <div class="rate" role="slider" tabindex="0" aria-label="Note sur 10" aria-valuemin="1" aria-valuemax="10"></div>
         <div class="rate-row">
-          <div class="rate" role="slider" tabindex="0" aria-label="Note" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0"></div>
+          <button type="button" class="btn half" data-half aria-pressed="false">+0,5</button>
           <span class="rate-val"></span>
           <button type="button" class="link" data-clear-rate>À noter plus tard</button>
         </div>
@@ -267,36 +267,44 @@ async function openForm(existing = null) {
         <button type="button" class="btn" data-close>Annuler</button>
         <button type="submit" class="btn primary">${existing ? 'Enregistrer' : 'Ajouter au carnet'}</button>
       </footer>
-    </form>`);
+    </form>`, { backdropClose: false }); // un clic à côté ne doit pas faire perdre la saisie
 
   const form = d.querySelector('form');
   const $ = sel => form.querySelector(sel);
 
-  // --- note en étoiles (demi-étoiles) ---
+  // --- note sur 10 : une case par point, « +0,5 » pour le demi-point ---
   const rate = $('.rate');
-  rate.innerHTML = Array.from({ length: 5 }, () => `<span class="s">${STAR}<span class="on">${STAR}</span></span>`).join('');
+  rate.innerHTML = Array.from({ length: 10 }, (_, i) => `<button type="button" tabindex="-1" data-r="${i + 1}" aria-label="${i + 1}">${i + 1}</button>`).join('');
+  const half = $('[data-half]');
   const drawRate = () => {
-    const r = s.rating;
-    rate.querySelectorAll('.s').forEach((el, i) => {
-      const fill = r == null ? 0 : Math.max(0, Math.min(1, (r / 2) - i));
-      el.querySelector('.on').style.width = fill * 100 + '%';
+    const r = s.rating, t = tierOf(r);
+    rate.className = 'rate' + (t ? ' k' + t.k : '');
+    rate.querySelectorAll('[data-r]').forEach(el => {
+      const n = +el.dataset.r;
+      el.classList.toggle('on', r != null && n <= r);
+      el.classList.toggle('half-on', r != null && n === Math.floor(r) + 1 && r % 1 !== 0);
     });
-    rate.setAttribute('aria-valuenow', r == null ? 0 : r / 2);
-    rate.setAttribute('aria-valuetext', r == null ? 'à noter' : `${String(r / 2).replace('.', ',')} sur 5`);
-    $('.rate-val').textContent = r == null ? 'à noter' : `${fmtScore(r)} / 10 · ${tierOf(r).label}`;
+    half.setAttribute('aria-pressed', String(r != null && r % 1 !== 0));
+    half.disabled = r == null || r >= 10;
+    rate.setAttribute('aria-valuenow', r ?? '');
+    rate.setAttribute('aria-valuetext', r == null ? 'à noter' : `${fmtScore(r)} sur 10, ${t.label}`);
+    $('.rate-val').textContent = r == null ? 'à noter' : `${fmtScore(r)} / 10 · ${t.label}`;
   };
   rate.addEventListener('click', e => {
-    const star = e.target.closest('.s'); if (!star) return;
-    const i = [...rate.children].indexOf(star);
-    const box = star.getBoundingClientRect();
-    s.rating = (i * 2) + (e.clientX - box.left < box.width / 2 ? 1 : 2);
+    const b = e.target.closest('[data-r]'); if (!b) return;
+    s.rating = +b.dataset.r;
+    drawRate();
+  });
+  half.addEventListener('click', () => {
+    if (s.rating == null) return;
+    s.rating = s.rating % 1 ? Math.floor(s.rating) : Math.min(10, s.rating + 0.5);
     drawRate();
   });
   rate.addEventListener('keydown', e => {
-    const step = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+    const step = { ArrowRight: 0.5, ArrowUp: 0.5, ArrowLeft: -0.5, ArrowDown: -0.5 }[e.key];
     if (!step) return;
     e.preventDefault();
-    s.rating = Math.max(1, Math.min(10, (s.rating || 0) + step));
+    s.rating = Math.max(1, Math.min(10, (s.rating ?? 0) + step));
     drawRate();
   });
   $('[data-clear-rate]').addEventListener('click', () => { s.rating = null; drawRate(); });
@@ -346,6 +354,11 @@ async function openForm(existing = null) {
           <span class="nm">${esc(c.name)}</span><span class="fv">Favori</span></button></li>`;
       }).join('')}</ul>`;
   };
+  // Humeur : toucher l'humeur déjà choisie la retire
+  form.querySelectorAll('[name=mood]').forEach(r => {
+    r.closest('label').addEventListener('pointerdown', () => { r.dataset.was = String(r.checked); });
+    r.addEventListener('click', () => { if (r.dataset.was === 'true') r.checked = false; r.dataset.was = 'false'; });
+  });
   form.addEventListener('click', e => {
     const b = e.target.closest('[data-fav]'); if (!b) return;
     const c = s.cast[+b.dataset.fav]; c.favorite = !c.favorite;

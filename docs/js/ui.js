@@ -64,7 +64,7 @@ export const moodTag = f => {
 };
 
 export function card(f, { compact = true, sizes } = {}) {
-  return `<a class="card${compact ? ' compact' : ''}" href="#/film/${encodeURIComponent(f.id)}" style="--ink:${inkOf(f)}" aria-label="${esc(f.title)}${f.year ? ` (${f.year})` : ''}">
+  return `<a class="card${compact ? ' compact' : ''}" href="#/film/${encodeURIComponent(f.id)}" style="--ink:${inkOf(f)}" aria-label="${esc(f.title)}${f.year ? ` (${f.year})` : ''}${f.status === 'seen' && f.rating != null ? ` · ${fmtScore(f.rating)} sur 10, ${tierOf(f.rating).label}` : ''}">
     ${poster(f, { sizes })}
     ${f.mood ? `<div class="over" aria-hidden="true">${moodTag(f)}</div>` : ''}
     <div class="info">${score(f)}</div>

@@ -40,7 +40,7 @@ function heatmap(films, year) {
     const idx = d + offset, w = Math.floor(idx / 7), dow = idx % 7;
     const list = byDay.get(iso) || [];
     const fill = HEAT[Math.min(list.length, 3)];
-    cells += `<rect class="c" x="${left + w * S}" y="${top + dow * S}" width="${C}" height="${C}" rx="2" fill="${fill}" data-d="${iso}" tabindex="${list.length ? 0 : -1}"><title>${esc(fmtDate(iso))}</title></rect>`;
+    cells += `<rect class="c" x="${left + w * S}" y="${top + dow * S}" width="${C}" height="${C}" rx="2" fill="${fill}" data-d="${iso}" tabindex="${list.length ? 0 : -1}" aria-label="${esc(fmtDate(iso))}${list.length ? ' : ' + esc(list.map(f => f.title).join(', ')) : ''}"/>`;
     if (date.getUTCDate() === 1) months += `<text x="${left + w * S}" y="11">${MONTH_ABBR[date.getUTCMonth()]}</text>`;
   }
   const labels = [0, 2, 4].map(i => `<text x="0" y="${top + i * S + 10}">${DAYS[i]}</text>`).join('');
@@ -61,7 +61,7 @@ function heatmap(films, year) {
 function ratingBars(films) {
   // Une barre par demi-point, de 1 à 10, colorée selon le verdict
   const steps = Array.from({ length: 19 }, (_, i) => 1 + i / 2);
-  const bins = steps.map(v => films.filter(f => f.rating === v).length);
+  const bins = steps.map(v => films.filter(f => f.rating != null && Math.max(1, f.rating) === v).length);
   const max = Math.max(1, ...bins);
   const W = 600, H = 190, pad = 22, bw = (W - 20) / steps.length, inner = bw - 6;
   const peak = bins.indexOf(max);

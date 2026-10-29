@@ -24,6 +24,7 @@
   --maxw:1240px;
 }
 *{box-sizing:border-box}
+[hidden]{display:none !important} /* l'attribut hidden doit gagner sur les display:grid/flex */
 html{-webkit-text-size-adjust:100%}
 html,body{margin:0}
 body{background:var(--bg);color:var(--text);font:15px/1.5 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh;display:flex;flex-direction:column}
@@ -76,9 +77,9 @@ body.over-hero .site-head{position:absolute;left:0;right:0}
 .big-score .n small{font-size:20px;opacity:.7;margin-left:2px}
 .big-score .v{font:500 13px var(--mono);letter-spacing:.1em;text-transform:uppercase}
 .big-score .v span{display:block;color:var(--muted);font:400 13px var(--sans);letter-spacing:0;text-transform:none;margin-top:4px}
-.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted);margin-top:10px}
-.legend span{display:inline-flex;align-items:center;gap:6px}
-.legend i{width:10px;height:10px;border-radius:50%;background:var(--tb)}
+/* légende des verdicts (dans .legend, définie avec les stats) */
+.legend [class^="k"]{display:inline-flex;align-items:center;gap:6px;margin-right:10px}
+.legend [class^="k"] i{background:var(--tb)}
 @media (max-width:640px){ .big-score .n{font-size:44px;padding:4px 12px 8px} .card .score{gap:6px} .card .score .w{font-size:10px;letter-spacing:0} }
 .tbd{display:inline-block;font:500 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--amber);border:1px solid currentColor;padding:3px 5px;border-radius:2px;white-space:nowrap}
 .wl-tag{color:var(--muted)}
@@ -356,11 +357,12 @@ dialog.sheet::backdrop{background:rgba(8,7,6,.78)}
 .picked-card strong{display:block;font:400 22px/1.15 var(--serif)}
 .picked-card span{display:block;font-size:13px;color:var(--muted);margin:4px 0 8px}
 
-.rate-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.rate{display:inline-flex;gap:4px;cursor:pointer;touch-action:manipulation;color:#4A433B}
-.rate .s{position:relative;display:block;width:42px;height:42px}
-.rate .s svg{width:42px;height:42px;display:block}
-.rate .s .on{position:absolute;inset:0 auto 0 0;width:0;overflow:hidden;color:var(--amber)}
+.rate{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;max-width:460px;outline-offset:3px}
+.rate button{height:44px;padding:0;border:1px solid var(--line);border-radius:3px;background:var(--surface);color:var(--muted);font:600 15px var(--sans);cursor:pointer;touch-action:manipulation}
+.rate button.on{background:var(--tb);color:var(--tf);border-color:transparent}
+.rate button.half-on{background:linear-gradient(90deg,var(--tb) 50%,var(--surface) 50%);color:var(--text)}
+.rate-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:10px}
+.btn.half[aria-pressed="true"]{border-color:var(--amber);color:var(--text)}
 .rate-val{font:500 15px var(--mono);color:var(--muted);min-width:70px}
 
 .cast-pick{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:12px 8px}

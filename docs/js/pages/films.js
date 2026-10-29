@@ -1,7 +1,7 @@
 // Tous les films : grille, filtres (humeur, note, année, cinéma, version), tri, recherche.
 // L'état des filtres vit dans l'URL (#/films?mood=leger&sort=rating) pour pouvoir partager un lien.
 import { seenFilms, watchlist } from '../store.js';
-import { MOODS, VERSIONS, card, esc } from '../ui.js';
+import { MOODS, VERSIONS, TIERS, card, esc } from '../ui.js';
 
 const fold = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const DEFAULTS = { tab: 'seen', q: '', mood: '', note: '', year: '', venue: '', version: '', sort: 'date' };
@@ -42,7 +42,8 @@ function controls(list, s) {
   const years = [...new Set(seen.map(f => (f.watchedAt || '').slice(0, 4)).filter(Boolean))].sort().reverse();
   const venues = Object.entries(seen.reduce((m, f) => { if (f.venue) m[f.venue.label] = (m[f.venue.label] || 0) + 1; return m; }, {}))
     .sort((a, b) => b[1] - a[1]).map(([v]) => v);
-  const notes = [[4.5, '4½ et +'], [4, '4 et +'], [3, '3 et +'], [2, '2 et +'], [1, '1 et +']];
+  // Seuils par verdict (note /10) : « Très bon et + » = 7 et plus
+  const notes = TIERS.filter(t => t.min > 0).map((t, i) => [t.min, i ? `${t.label} et +` : t.label]);
   const seenTab = s.tab === 'seen';
   const moods = s.mood ? s.mood.split(',') : [];
   const active = ['note', 'year', 'venue', 'version'].filter(k => s[k]).length;
@@ -62,7 +63,7 @@ function controls(list, s) {
       </label>
     </div>
     ${seenTab ? `<div class="filters" id="filters">
-      <label class="field">Note<select name="note">${option('', 'Toutes', s.note)}${notes.map(([v, l]) => option(v * 2, l, s.note)).join('')}${option('tbd', 'À noter', s.note)}</select></label>
+      <label class="field">Note<select name="note">${option('', 'Toutes', s.note)}${notes.map(([v, l]) => option(v, l, s.note)).join('')}${option('tbd', 'À noter', s.note)}</select></label>
       <label class="field">Vu en<select name="year">${option('', 'Toutes', s.year)}${years.map(y => option(y, y, s.year)).join('')}</select></label>
       <label class="field">Lieu<select name="venue">${option('', 'Tous', s.venue)}${venues.map(v => option(v, v, s.venue)).join('')}</select></label>
       <label class="field">Version<select name="version">${option('', 'Toutes', s.version)}${VERSIONS.map(v => option(v, v, s.version)).join('')}</select></label>
