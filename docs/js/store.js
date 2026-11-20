@@ -101,6 +101,6 @@ export const watchlist = list => list.filter(f => f.status === 'watchlist')
 
 // Numéro de séance : rang chronologique parmi les films vus
 export function sessionNumber(list, film) {
-  const chrono = seenFilms(list).reverse();
-  return chrono.findIndex(f => f.id === film.id) + 1;
+  const chrono = seenFilms(list).filter(f => f.watchedAt).reverse();
+  return chrono.findIndex(f => f.id === film.id) + 1; // 0 = date inconnue
 }

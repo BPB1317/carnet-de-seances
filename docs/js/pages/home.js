@@ -60,7 +60,7 @@ export function render(app, route, list) {
     title.textContent = f.title;
     title.href = `#/film/${encodeURIComponent(f.id)}`;
     scoreEl.innerHTML = bigScore(f);
-    meta.innerHTML = `<span>vu le ${esc(fmtDate(f.watchedAt))}</span>${f.venue ? `<span>${esc(f.venue.label)}</span>` : ''}${f.version ? `<span>${f.version}</span>` : ''}`;
+    meta.innerHTML = `${f.watchedAt ? `<span>vu le ${esc(fmtDate(f.watchedAt))}</span>` : ''}${f.venue ? `<span>${esc(f.venue.label)}</span>` : ''}${f.version ? `<span>${f.version}</span>` : ''}`;
   };
   show(0);
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;

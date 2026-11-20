@@ -198,7 +198,7 @@ async function openForm(existing = null) {
     venue: venues[0] || DEFAULT_VENUE, watchedAt: todayISO(), watchedAtPrecision: 'day', version: 'VOSTFR',
     tmdbId: null, posterPath: null, backdropPath: null,
   };
-  if (existing && !s.watchedAt) s.watchedAt = todayISO();
+  if (existing?.status === 'watchlist' && !s.watchedAt) s.watchedAt = todayISO();
   const hasKey = Boolean(ls.get(KEY_STORE));
 
   const d = sheet(`
@@ -233,7 +233,10 @@ async function openForm(existing = null) {
         <div class="chips">${MOODS.map(m => `<label class="chip" style="--ink:${m.color}"><input type="radio" name="mood" value="${m.id}" ${s.mood === m.id ? 'checked' : ''}><span class="dot"></span>${m.label}</label>`).join('')}</div>
       </section>
       <section class="block seen-only two-col">
-        <label class="lbl">Date<input name="watchedAt" type="date" value="${esc(s.watchedAt && s.watchedAt.length === 10 ? s.watchedAt : '')}" max="${todayISO()}"></label>
+        <div>
+          <label class="lbl">Date<input name="watchedAt" type="date" value="${esc(s.watchedAt && s.watchedAt.length === 10 ? s.watchedAt : '')}" max="${todayISO()}"></label>
+          <button type="button" class="link" data-no-date>Date inconnue</button>
+        </div>
         <div>
           <span class="lbl">Version</span>
           <div class="seg">${VERSIONS.map(v => `<label><input type="radio" name="version" value="${v}" ${s.version === v ? 'checked' : ''}><span>${v}</span></label>`).join('')}</div>
@@ -308,6 +311,7 @@ async function openForm(existing = null) {
     drawRate();
   });
   $('[data-clear-rate]').addEventListener('click', () => { s.rating = null; drawRate(); });
+  $('[data-no-date]').addEventListener('click', () => { $('[name=watchedAt]').value = ''; });
   drawRate();
 
   // --- statut vu / à voir ---
@@ -445,7 +449,7 @@ async function openForm(existing = null) {
       budget: num('budget'),
       budgetCurrency: val('budgetCurrency') || 'USD',
       venue: seenNow ? venue : null,
-      watchedAt: seenNow ? (val('watchedAt') || (existing?.watchedAtPrecision === 'month' ? existing.watchedAt : todayISO())) : null,
+      watchedAt: seenNow ? (val('watchedAt') || (existing?.watchedAtPrecision === 'month' ? existing.watchedAt : null)) : null,
       watchedAtPrecision: seenNow ? (val('watchedAt') ? 'day' : existing?.watchedAtPrecision || 'day') : null,
       version: seenNow ? form.querySelector('[name=version]:checked')?.value || null : null,
       tmdbId: s.tmdbId || null,

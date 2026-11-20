@@ -98,14 +98,14 @@ export function ticket(f, number) {
       <div class="venue">${esc(v.name || 'Lieu inconnu')}${v.city ? `<br>${esc(v.city)}` : ''}</div>
       <dl>
         <dt>Film</dt><dd>${esc(f.title)}</dd>
-        <dt>Date</dt><dd>${esc(fmtDate(f.watchedAt) || '—')}</dd>
+        <dt>Date</dt><dd>${esc(fmtDate(f.watchedAt) || 'inconnue')}</dd>
         ${f.runtime ? `<dt>Durée</dt><dd>${f.runtime} min</dd>` : ''}
       </dl>
     </div>
     <div class="stub">
       <div class="k">Version</div>
       <div class="ver">${esc(f.version || '—')}</div>
-      <div class="num">N° ${String(number).padStart(4, '0')}${moodOf(f.mood) ? ' · ' + moodOf(f.mood).label : ''}</div>
+      <div class="num">${[number ? `N° ${String(number).padStart(4, '0')}` : '', moodOf(f.mood)?.label].filter(Boolean).join(' · ')}</div>
     </div>
     ${f.watchedAt ? `<div class="stamp" aria-hidden="true">${fmtStamp(f.watchedAt)}<small>${f.watchedAt.slice(0, 4)}</small></div>` : ''}
   </div>`;
