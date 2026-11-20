@@ -191,6 +191,24 @@ async function openForm(existing = null) {
   const venues = [...venueCount.values()].sort((a, b) => b.n - a.n).map(x => x.v);
   // Acteurs déjà marqués favoris : pré-cochés au casting
   const knownFavs = new Set(list.flatMap(f => f.cast.filter(c => c.favorite).map(c => c.tmdbPersonId || c.name)));
+  // Humeur proposée d'après le genre : d'abord comme j'ai classé les films du même genre, sinon une règle simple
+  const fold = g => String(g || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/-/g, ' ');
+  const moodFromHistory = g => {
+    const n = {};
+    seen.forEach(f => { if (f.mood && fold(f.genre) === fold(g)) n[f.mood] = (n[f.mood] || 0) + 1; });
+    return Object.entries(n).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+  };
+  const GENRE_MOOD = [
+    [/thriller|policier|crime|mystere|guerre|histoire|historique|western|horreur/, 'prenant'],
+    [/comedie (dramatique|romantique)|romance|documentaire|drame/, 'humain'],
+    [/comedie|familial|animation/, 'leger'],
+    [/science|fantastique|aventure|action|musique/, 'divertissement'],
+  ];
+  const suggestMood = genres => {
+    for (const g of genres) { const m = moodFromHistory(g); if (m) return m; }
+    for (const g of genres) { const hit = GENRE_MOOD.find(([re]) => re.test(fold(g))); if (hit) return hit[1]; }
+    return null;
+  };
 
   const s = existing ? structuredClone(existing) : {
     status: 'seen', title: '', originalTitle: null, year: null, rating: null, review: null, mood: null,
@@ -229,7 +247,7 @@ async function openForm(existing = null) {
         <label class="lbl">Mon avis<textarea name="review" rows="3" placeholder="Ce que j'en ai pensé en sortant…">${esc(s.review || '')}</textarea></label>
       </section>
       <section class="block">
-        <h3>Humeur</h3>
+        <h3>Humeur <span class="hint mood-hint"></span></h3>
         <div class="chips">${MOODS.map(m => `<label class="chip" style="--ink:${m.color}"><input type="radio" name="mood" value="${m.id}" ${s.mood === m.id ? 'checked' : ''}><span class="dot"></span>${m.label}</label>`).join('')}</div>
       </section>
       <section class="block seen-only two-col">
@@ -318,6 +336,7 @@ async function openForm(existing = null) {
   const syncStatus = () => form.querySelectorAll('.seen-only').forEach(el => { el.hidden = s.status !== 'seen'; });
   form.addEventListener('change', e => {
     if (e.target.name === 'status') { s.status = e.target.value; syncStatus(); }
+    if (e.target.name === 'mood') $('.mood-hint').textContent = '';
     if (e.target.name === 'venue') $('.other-venue').hidden = e.target.value !== 'other';
   });
   syncStatus();
@@ -412,6 +431,12 @@ async function openForm(existing = null) {
         // Film en français -> VO ; sinon VOSTFR par défaut
         const ver = m.original_language === 'fr' ? 'VO' : 'VOSTFR';
         s.version = ver; form.querySelector(`[name=version][value=${ver}]`).checked = true;
+        // Humeur présélectionnée si je n'en ai pas encore choisi
+        const mood = !form.querySelector('[name=mood]:checked') && suggestMood([s.genre, ...(m.genres || []).map(g => g.name)].filter(Boolean));
+        if (mood) {
+          form.querySelector(`[name=mood][value=${mood}]`).checked = true;
+          $('.mood-hint').textContent = `proposée d'après le genre (${s.genre}), à changer si besoin`;
+        }
         results.innerHTML = '';
         $('.search-block').hidden = true;
         fillDetails();
